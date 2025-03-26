@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dashboard Utilisateur - Déploiement de Service</title>
+    <!-- Lien vers Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f0f2f5;
+        margin: 0;
+        padding: 0;
+      }
+      header {
+        background-color: #4caf50;
+        color: #fff;
+        padding: 1rem;
+        text-align: center;
+      }
+      .container {
+        padding: 20px;
+      }
+      .hidden {
+        display: none;
+      }
+      .dashboard,
+      .telemetry {
+        background: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      /* Dashboard en cartes */
+      .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+      .service-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .service-card h3 {
+        margin-top: 0;
+      }
+      .card-info p {
+        margin: 5px 0;
+      }
+      .card-actions {
+        margin-top: 15px;
+        text-align: right;
+      }
+      .btn {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        color: #fff;
+        margin-right: 5px;
+      }
+      .btn-primary {
+        background-color: #2196f3;
+      }
+      .btn-danger {
+        background-color: #f44336;
+      }
+      .btn-secondary {
+        background-color: #607d8b;
+      }
+      @keyframes pulse {
+        0% {
+          transform: translateY(-50%) scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: translateY(-50%) scale(1.2);
+          opacity: 0.7;
+        }
+        100% {
+          transform: translateY(-50%) scale(1);
+          opacity: 1;
+        }
+      }
+      .status.actif {
+        color: #4caf50;
+      }
+      .status.en-cours {
+        color: #ff9800;
+      }
+      .status.erreur {
+        color: #f44336;
+      }
+      /* Onglets pour les graphiques */
+      .tabs {
+        margin-top: 20px;
+        display: flex;
+        border-bottom: 1px solid #ddd;
+      }
+      .tab-button {
+        padding: 10px 20px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        outline: none;
+        font-size: 1rem;
+      }
+      .tab-button.active {
+        border-bottom: 3px solid #2196f3;
+        font-weight: bold;
+      }
+      .tab-content {
+        margin-top: 20px;
+      }
+      .tab-pane {
+        display: none;
+      }
+      .tab-pane.active {
+        display: block;
+      }
+      .chart-container {
+        width: 100%;
+        margin: 20px 0;
+      }
+      .alerts,
+      .logs,
+      .config {
+        background: #f9f9f9;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+      .alert,
+      .log {
+        margin-bottom: 10px;
+        padding: 8px;
+        background: #ffe0b2;
+        border-left: 4px solid #ff9800;
+      }
+      pre {
+        background: #e0e0e0;
+        padding: 10px;
+        border-radius: 5px;
+        overflow-x: auto;
+      }
+      /* Filtre de période */
+      #periodFilter {
+        margin: 20px 0;
+      }
+      /* Global Summary */
+      #globalSummary p {
+        margin: 5px 0;
+      }
+      /* Section Détails du service */
+      #serviceDetails table,
+      #credentialsSection table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      #serviceDetails td,
+      #serviceDetails th,
+      #credentialsSection td,
+      #credentialsSection th {
+        padding: 8px;
+        border: 1px solid #ddd;
+      }
+      /* Boutons de copie et toggle pour credentials */
+      .copy-btn,
+      .toggle-btn {
+        margin-left: 5px;
+      }
+      .masked {
+        font-family: monospace;
+      }
+      /* Responsive */
+      @media (max-width: 600px) {
+        .cards-container {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Dashboard Utilisateur</h1>
+      <p>Gérez et surveillez vos services déployés</p>
+    </header>
+    <div class="container">
+      <!-- Vue du Dashboard : Cartes des Services -->
+      <div id="dashboardView" class="dashboard">
+        <h2>Liste des Services</h2>
+        <div class="cards-container">
+          <div class="service-card" data-service="Service Node.js">
+            <div class="card-info">
+              <h3>Service Node.js</h3>
+              <p>
+                <strong>Statut :</strong>
+                <span class="status actif"
+                  ><i class="fas fa-circle"></i> Actif</span
+                >
+              </p>
+              <p><strong>Date de création :</strong> 15/02/2025</p>
+              <p>
+                <strong>URL :</strong>
+                <a href="http://service-nodejs.example.com" target="_blank"
+                  >Voir le service</a
+                >
+              </p>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-primary btn-detail">
+                <i class="fas fa-eye"></i> Voir détails
+              </button>
+              <button class="btn btn-primary btn-redemarrer">
+                <i class="fas fa-sync-alt"></i> Redémarrer
+              </button>
+              <button class="btn btn-danger btn-supprimer">
+                <i class="fas fa-trash-alt"></i> Supprimer
+              </button>
+            </div>
+          </div>
+          <div class="service-card" data-service="Application Django">
+            <div class="card-info">
+              <h3>Application Django</h3>
+              <p>
+                <strong>Statut :</strong>
+                <span class="status en-cours"
+                  ><i class="fas fa-spinner fa-spin"></i> En cours</span
+                >
+              </p>
+              <p><strong>Date de création :</strong> 16/02/2025</p>
+              <p>
+                <strong>URL :</strong>
+                <a href="http://application-django.example.com" target="_blank"
+                  >Voir le service</a
+                >
+              </p>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-primary btn-detail">
+                <i class="fas fa-eye"></i> Voir détails
+              </button>
+              <button class="btn btn-primary btn-redemarrer">
+                <i class="fas fa-sync-alt"></i> Redémarrer
+              </button>
+              <button class="btn btn-danger btn-supprimer">
+                <i class="fas fa-trash-alt"></i> Supprimer
+              </button>
+            </div>
+          </div>
+          <div class="service-card" data-service="Service PHP">
+            <div class="card-info">
+              <h3>Service PHP</h3>
+              <p>
+                <strong>Statut :</strong>
+                <span class="status erreur"
+                  ><i class="fas fa-exclamation-triangle"></i> Erreur</span
+                >
+              </p>
+              <p><strong>Date de création :</strong> 17/02/2025</p>
+              <p>
+                <strong>URL :</strong>
+                <a href="http://service-php.example.com" target="_blank"
+                  >Voir le service</a
+                >
+              </p>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-primary btn-detail">
+                <i class="fas fa-eye"></i> Voir détails
+              </button>
+              <button class="btn btn-primary btn-redemarrer">
+                <i class="fas fa-sync-alt"></i> Redémarrer
+              </button>
+              <button class="btn btn-danger btn-supprimer">
+                <i class="fas fa-trash-alt"></i> Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vue Détails / Télémétrie pour un service -->
+      <div id="telemetryView" class="telemetry hidden">
+        <button id="backButton" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> Retour au Dashboard
+        </button>
+        <h2 id="telemetryTitle">Détails du service</h2>
+
+        <!-- Résumé global -->
+        <div id="globalSummary">
+          <p>
+            <strong>Moyenne latence :</strong>
+            <span id="avgLatency">120ms</span>
+          </p>
+          <p>
+            <strong>Requêtes/5min :</strong> <span id="reqPer5min">80</span>
+          </p>
+          <p><strong>Taux d'erreur :</strong> <span id="errorRate">3%</span></p>
+          <p>
+            <strong>Utilisation CPU :</strong> <span id="cpuUsage">70%</span>
+          </p>
+        </div>
+
+        <!-- Section Détails du service -->
+        <div id="serviceDetails">
+          <h3><i class="fas fa-info-circle"></i> Détails du service</h3>
+          <table>
+            <tr>
+              <td><strong>Nom du service</strong></td>
+              <td id="detailServiceName"></td>
+            </tr>
+            <tr>
+              <td><strong>Type</strong></td>
+              <td id="detailType"></td>
+            </tr>
+            <tr>
+              <td><strong>Date de création</strong></td>
+              <td id="detailDateCreation"></td>
+            </tr>
+            <tr>
+              <td><strong>État actuel</strong></td>
+              <td id="detailEtat"></td>
+            </tr>
+            <tr>
+              <td><strong>Version déployée</strong></td>
+              <td id="detailVersion"></td>
+            </tr>
+            <tr>
+              <td><strong>Dernier redémarrage</strong></td>
+              <td id="detailLastRestart"></td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Section Identifiants d'accès -->
+        <div id="credentialsSection">
+          <h3><i class="fas fa-key"></i> Identifiants d'accès</h3>
+          <table>
+            <tr>
+              <td><strong>Nom d'utilisateur</strong></td>
+              <td id="credentialUsername"></td>
+              <td>
+                <button
+                  class="btn btn-secondary copy-btn"
+                  data-copy-target="credentialUsername"
+                >
+                  <i class="fas fa-copy"></i>
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Mot de passe</strong></td>
+              <td id="credentialPassword">
+                <span class="masked">********</span>
+              </td>
+              <td>
+                <button
+                  class="btn btn-secondary toggle-btn"
+                  data-target="credentialPassword"
+                >
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button
+                  class="btn btn-secondary copy-btn"
+                  data-copy-target="credentialPassword"
+                >
+                  <i class="fas fa-copy"></i>
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Clé API</strong></td>
+              <td id="credentialApiKey"></td>
+              <td>
+                <button
+                  class="btn btn-secondary copy-btn"
+                  data-copy-target="credentialApiKey"
+                >
+                  <i class="fas fa-copy"></i>
+                </button>
+              </td>
+            </tr>
+          </table>
+          <p>
+            <em
+              >Ces informations sont sensibles. Soyez prudent lors de leur
+              utilisation.</em
+            >
+          </p>
+        </div>
+
+        <!-- Infos système supplémentaires -->
+        <p>
+          <strong>Statut en temps réel :</strong>
+          <span id="telemetryStatus" class="status">Actif</span>
+        </p>
+        <p id="uptimeMetric">
+          <strong>Disponibilité sur 24h :</strong>
+          <span id="uptimeValue">99.8%</span>
+        </p>
+        <p>
+          <strong>Uptime :</strong> <span id="uptimeDetail">3600s</span> |
+          <strong>Dernier redémarrage :</strong>
+          <span id="lastRestart">15/02/2025 08:00</span> |
+          <strong>IP / Nom d’hôte :</strong>
+          <span id="hostInfo">192.168.1.100 / nodejs-server</span>
+        </p>
+
+        <!-- Filtre de période et rafraîchissement -->
+        <div id="periodFilter">
+          <label for="periodSelect"><strong>Période :</strong></label>
+          <select id="periodSelect">
+            <option value="15">15 min</option>
+            <option value="60" selected>1 h</option>
+            <option value="1440">24 h</option>
+          </select>
+          <button id="refreshButton" class="btn btn-secondary">
+            <i class="fas fa-sync"></i> Rafraîchir
+          </button>
+        </div>
+
+        <!-- Onglets pour les graphiques -->
+        <div class="tabs">
+          <button class="tab-button active" data-tab="latencyTab">
+            <i class="fas fa-tachometer-alt"></i> Latence
+          </button>
+          <button class="tab-button" data-tab="requestsTab">
+            <i class="fas fa-network-wired"></i> Requêtes
+          </button>
+          <button class="tab-button" data-tab="errorTab">
+            <i class="fas fa-bug"></i> Erreurs
+          </button>
+          <button class="tab-button" data-tab="resourcesTab">
+            <i class="fas fa-microchip"></i> Ressources
+          </button>
+        </div>
+        <div class="tab-content">
+          <div id="latencyTab" class="tab-pane active">
+            <canvas id="latencyChart" width="400" height="200"></canvas>
+          </div>
+          <div id="requestsTab" class="tab-pane">
+            <canvas id="requestsChart" width="400" height="200"></canvas>
+          </div>
+          <div id="errorTab" class="tab-pane">
+            <canvas id="errorChart" width="400" height="200"></canvas>
+          </div>
+          <div id="resourcesTab" class="tab-pane">
+            <canvas id="resourcesChart" width="400" height="200"></canvas>
+          </div>
+        </div>
+
+        <!-- Section Alertes -->
+        <div>
+          <h3>
+            <i class="fas fa-exclamation-circle"></i> Historique et alertes
+          </h3>
+          <div class="alerts">
+            <div class="alert">
+              [15/02/2025 14:32] Alerte: Pic de latence détecté
+            </div>
+            <div class="alert">
+              [15/02/2025 15:10] Alerte: Taux d'erreur élevé
+            </div>
+            <div class="alert">
+              [15/02/2025 16:05] Alerte: Utilisation CPU à 90%
+            </div>
+          </div>
+        </div>
+
+        <!-- Section Logs récents -->
+        <div>
+          <h3><i class="fas fa-file-alt"></i> Logs récents</h3>
+          <div class="logs">
+            <div class="log">
+              [15/02/2025 14:30] Log: Requête GET /api/status - 200 OK
+            </div>
+            <div class="log">
+              [15/02/2025 14:31] Log: Requête POST /api/deploy - 201 Created
+            </div>
+            <div class="log">
+              [15/02/2025 14:32] Log: Requête GET /api/metrics - 200 OK
+            </div>
+          </div>
+        </div>
+
+        <!-- Section Détails de la configuration -->
+        <div>
+          <h3><i class="fas fa-file-code"></i> Détails de la configuration</h3>
+          <div id="configDetailsSection">
+            <table id="configDetailsTable">
+              <!-- Rempli dynamiquement -->
+            </table>
+          </div>
+          <div id="yamlBlock" class="hidden">
+            <pre id="yamlConfig">
+# Configuration du service
+service: example
+version: 1.0.0
+resources:
+  cpu: 2
+  memory: 1024MB
+          </pre
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Plugin d'annotation pour Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.1.0"></script>
+    <script>
+      // Attendre que le DOM soit chargé
+      document.addEventListener("DOMContentLoaded", function () {
+        // Variables globales pour les graphiques
+        let latencyChart, requestsChart, errorChart, resourcesChart;
+
+        // Exemples de configurations pour chaque service avec nouveaux champs
+        const serviceConfigs = {
+          "Service Node.js": {
+            uptime: "99.8%",
+            uptimeDetail: "3600s",
+            lastRestart: "15/02/2025 08:00",
+            hostInfo: "192.168.1.100 / nodejs-server",
+            yaml: `# Configuration Node.js
+service: nodejs-app
+version: 1.2.3
+resources:
+  cpu: 2
+  memory: 2048MB`,
+            configDetails: {
+              Service: "nodejs-app",
+              Version: "1.2.3",
+              CPU: "2",
+              Mémoire: "2048MB",
+            },
+            summary: {
+              avgLatency: "120ms",
+              reqPer5min: "80",
+              errorRate: "3%",
+              cpuUsage: "70%",
+            },
+            telemetry: {
+              latency: [120, 150, 100, 130, 110, 140],
+              requests: [50, 75, 60, 80, 70, 90],
+              errors: [2, 3, 1, 4, 2, 3],
+              resources: [70, 55, 40],
+            },
+            details: {
+              type: "Node.js",
+              dateCreation: "15/02/2025",
+              etat: "Actif",
+              versionDeployed: "1.2.3",
+            },
+            credentials: {
+              "Nom d'utilisateur": "nodejs_user",
+              "Mot de passe": "********",
+              "Clé API": "abcd1234",
+            },
+          },
+          "Application Django": {
+            uptime: "98.5%",
+            uptimeDetail: "4200s",
+            lastRestart: "16/02/2025 09:00",
+            hostInfo: "192.168.1.101 / django-server",
+            yaml: `# Configuration Django
+service: django-app
+version: 2.0.0
+resources:
+  cpu: 4
+  memory: 4096MB`,
+            configDetails: {
+              Service: "django-app",
+              Version: "2.0.0",
+              CPU: "4",
+              Mémoire: "4096MB",
+            },
+            summary: {
+              avgLatency: "210ms",
+              reqPer5min: "95",
+              errorRate: "2%",
+              cpuUsage: "65%",
+            },
+            telemetry: {
+              latency: [200, 220, 210, 230, 215, 225],
+              requests: [80, 90, 85, 95, 88, 92],
+              errors: [1, 2, 0, 3, 1, 2],
+              resources: [60, 70, 50],
+            },
+            details: {
+              type: "Django",
+              dateCreation: "16/02/2025",
+              etat: "En cours",
+              versionDeployed: "2.0.0",
+            },
+            credentials: {
+              "Nom d'utilisateur": "django_user",
+              "Mot de passe": "********",
+              "Clé API": "efgh5678",
+            },
+          },
+          "Service PHP": {
+            uptime: "95.0%",
+            uptimeDetail: "3000s",
+            lastRestart: "17/02/2025 07:30",
+            hostInfo: "192.168.1.102 / php-server",
+            yaml: `# Configuration PHP
+service: php-app
+version: 1.0.1
+resources:
+  cpu: 1
+  memory: 1024MB`,
+            configDetails: {
+              Service: "php-app",
+              Version: "1.0.1",
+              CPU: "1",
+              Mémoire: "1024MB",
+            },
+            summary: {
+              avgLatency: "315ms",
+              reqPer5min: "45",
+              errorRate: "6%",
+              cpuUsage: "80%",
+            },
+            telemetry: {
+              latency: [300, 320, 310, 330, 315, 325],
+              requests: [40, 45, 42, 48, 44, 46],
+              errors: [5, 6, 4, 7, 5, 6],
+              resources: [80, 65, 55],
+            },
+            details: {
+              type: "PHP",
+              dateCreation: "17/02/2025",
+              etat: "Erreur",
+              versionDeployed: "1.0.1",
+            },
+            credentials: {
+              "Nom d'utilisateur": "php_user",
+              "Mot de passe": "********",
+              "Clé API": "ijkl9012",
+            },
+          },
+        };
+
+        // Gestion des vues
+        const dashboardView = document.getElementById("dashboardView");
+        const telemetryView = document.getElementById("telemetryView");
+        const backButton = document.getElementById("backButton");
+        const telemetryTitle = document.getElementById("telemetryTitle");
+        const telemetryStatus = document.getElementById("telemetryStatus");
+        const uptimeMetric = document.getElementById("uptimeMetric");
+        const yamlConfig = document.getElementById("yamlConfig");
+
+        // Affiche la vue télémétrie pour le service sélectionné et met à jour les données
+        function showTelemetry(serviceName, status) {
+          telemetryTitle.textContent = "Détails du service : " + serviceName;
+          telemetryStatus.textContent = status;
+          telemetryStatus.className =
+            "status " +
+            (status === "Actif"
+              ? "actif"
+              : status === "En cours"
+              ? "en-cours"
+              : "erreur");
+
+          if (serviceConfigs[serviceName]) {
+            const config = serviceConfigs[serviceName];
+            uptimeMetric.innerHTML =
+              "<strong>Disponibilité sur 24h :</strong> " + config.uptime;
+            yamlConfig.textContent = config.yaml;
+            // Mise à jour du résumé global
+            document.getElementById("avgLatency").textContent =
+              config.summary.avgLatency;
+            document.getElementById("reqPer5min").textContent =
+              config.summary.reqPer5min;
+            document.getElementById("errorRate").textContent =
+              config.summary.errorRate;
+            document.getElementById("cpuUsage").textContent =
+              config.summary.cpuUsage;
+            // Infos système
+            document.getElementById("uptimeDetail").textContent =
+              config.uptimeDetail;
+            document.getElementById("lastRestart").textContent =
+              config.lastRestart;
+            document.getElementById("hostInfo").textContent = config.hostInfo;
+            // Détails du service
+            document.getElementById("detailServiceName").textContent =
+              serviceName;
+            document.getElementById("detailType").textContent =
+              config.details.type;
+            document.getElementById("detailDateCreation").textContent =
+              config.details.dateCreation;
+            document.getElementById("detailEtat").textContent =
+              config.details.etat;
+            document.getElementById("detailVersion").textContent =
+              config.details.versionDeployed;
+            document.getElementById("detailLastRestart").textContent =
+              config.lastRestart;
+            // Credentials
+            document.getElementById("credentialUsername").textContent =
+              config.credentials["Nom d'utilisateur"];
+            document
+              .getElementById("credentialPassword")
+              .querySelector(".masked").textContent =
+              config.credentials["Mot de passe"];
+            document.getElementById("credentialApiKey").textContent =
+              config.credentials["Clé API"];
+            // Détails de la configuration
+            updateConfigDetails(config.configDetails);
+          }
+
+          dashboardView.classList.add("hidden");
+          telemetryView.classList.remove("hidden");
+          initializeCharts(serviceName);
+        }
+
+        // Fonction pour mettre à jour la table des détails de la configuration
+        function updateConfigDetails(details) {
+          const table = document.getElementById("configDetailsTable");
+          table.innerHTML = "";
+          for (const key in details) {
+            const row = document.createElement("tr");
+            const cellKey = document.createElement("td");
+            cellKey.innerHTML = `<strong>${key}</strong>`;
+            const cellValue = document.createElement("td");
+            cellValue.textContent = details[key];
+            row.appendChild(cellKey);
+            row.appendChild(cellValue);
+            table.appendChild(row);
+          }
+        }
+
+        // Bouton de retour
+        backButton.addEventListener("click", () => {
+          telemetryView.classList.add("hidden");
+          dashboardView.classList.remove("hidden");
+        });
+
+        // Événement sur "Voir détails"
+        document.querySelectorAll(".btn-detail").forEach((button) => {
+          button.addEventListener("click", function () {
+            const card = this.closest(".service-card");
+            const serviceName = card.getAttribute("data-service");
+            const status = card.querySelector(".status").textContent;
+            showTelemetry(serviceName, status);
+          });
+        });
+
+        // Actions Redémarrer et Supprimer
+        document.querySelectorAll(".btn-redemarrer").forEach((button) => {
+          button.addEventListener("click", function () {
+            alert("Redémarrage du service (simulation)...");
+          });
+        });
+        document.querySelectorAll(".btn-supprimer").forEach((button) => {
+          button.addEventListener("click", function () {
+            if (confirm("Êtes-vous sûr de vouloir supprimer ce service ?")) {
+              const card = this.closest(".service-card");
+              card.style.opacity = "0.5";
+              alert("Service supprimé (simulation)");
+            }
+          });
+        });
+
+        // Gestion des onglets pour les graphiques
+        const tabButtons = document.querySelectorAll(".tab-button");
+        const tabPanes = document.querySelectorAll(".tab-pane");
+        tabButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            tabButtons.forEach((btn) => btn.classList.remove("active"));
+            button.classList.add("active");
+            const target = button.getAttribute("data-tab");
+            tabPanes.forEach((pane) => {
+              pane.classList.remove("active");
+              if (pane.id === target) {
+                pane.classList.add("active");
+              }
+            });
+          });
+        });
+
+        // Filtre de période et bouton de rafraîchissement
+        document
+          .getElementById("periodSelect")
+          .addEventListener("change", () => {
+            const period = document.getElementById("periodSelect").value;
+            console.log("Période sélectionnée : " + period + " minutes");
+            // Pour la démo, on réinitialise avec le même service
+            initializeCharts(
+              document
+                .querySelector(".service-card[data-service]")
+                .getAttribute("data-service")
+            );
+          });
+
+        document
+          .getElementById("refreshButton")
+          .addEventListener("click", () => {
+            initializeCharts(
+              document
+                .querySelector(".service-card[data-service]")
+                .getAttribute("data-service")
+            );
+          });
+
+        // Gestion des boutons de copie pour les credentials
+        document.querySelectorAll(".copy-btn").forEach((button) => {
+          button.addEventListener("click", function () {
+            console.log("Copie de : " + this.getAttribute("data-copy-target"));
+            const targetId = this.getAttribute("data-copy-target");
+            const targetElem = document.getElementById(targetId);
+            if (targetElem) {
+              const text = targetElem.innerText;
+              navigator.clipboard
+                .writeText(text)
+                .then(() => {
+                  alert("Copié : " + text);
+                })
+                .catch((err) => {
+                  alert(
+                    "Erreur lors de la copie. Assurez-vous d'utiliser un contexte sécurisé (HTTPS)."
+                  );
+                });
+            }
+          });
+        });
+
+        // Gestion des boutons toggle pour afficher/masquer les credentials sensibles (ex: Mot de passe)
+        document.querySelectorAll(".toggle-btn").forEach((button) => {
+          button.addEventListener("click", function () {
+            const targetId = this.getAttribute("data-target");
+            const targetElem = document
+              .getElementById(targetId)
+              .querySelector(".masked");
+            if (targetElem.textContent === "********") {
+              // Révéler la valeur (pour la démo, valeur fictive)
+              targetElem.textContent = "secret123";
+              this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+              targetElem.textContent = "********";
+              this.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+          });
+        });
+
+        // Initialisation des graphiques avec Chart.js
+        function initializeCharts(serviceName) {
+          const telemetryData = serviceConfigs[serviceName]
+            ? serviceConfigs[serviceName].telemetry
+            : {
+                latency: [0, 0, 0, 0, 0, 0],
+                requests: [0, 0, 0, 0, 0, 0],
+                errors: [0, 0, 0, 0, 0, 0],
+                resources: [0, 0, 0],
+              };
+
+          if (latencyChart) latencyChart.destroy();
+          if (requestsChart) requestsChart.destroy();
+          if (errorChart) errorChart.destroy();
+          if (resourcesChart) resourcesChart.destroy();
+
+          // Graphique de latence avec seuil critique à 200ms
+          const latencyCtx = document
+            .getElementById("latencyChart")
+            .getContext("2d");
+          latencyChart = new Chart(latencyCtx, {
+            type: "line",
+            data: {
+              labels: ["10:00", "10:05", "10:10", "10:15", "10:20", "10:25"],
+              datasets: [
+                {
+                  label: "Latence (ms)",
+                  data: telemetryData.latency,
+                  borderColor: "#2196F3",
+                  backgroundColor: "rgba(33,150,243,0.2)",
+                  fill: true,
+                  tension: 0.3,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                annotation: {
+                  annotations: {
+                    line1: {
+                      type: "line",
+                      yMin: 200,
+                      yMax: 200,
+                      borderColor: "red",
+                      borderWidth: 2,
+                      label: {
+                        content: "Seuil critique (200ms)",
+                        enabled: true,
+                        position: "end",
+                      },
+                    },
+                  },
+                },
+              },
+              scales: { y: { beginAtZero: true } },
+            },
+          });
+
+          // Graphique des requêtes
+          const requestsCtx = document
+            .getElementById("requestsChart")
+            .getContext("2d");
+          requestsChart = new Chart(requestsCtx, {
+            type: "bar",
+            data: {
+              labels: ["10:00", "10:05", "10:10", "10:15", "10:20", "10:25"],
+              datasets: [
+                {
+                  label: "Requêtes",
+                  data: telemetryData.requests,
+                  backgroundColor: "#4CAF50",
+                },
+              ],
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } },
+          });
+
+          // Graphique du taux d'erreur
+          const errorCtx = document
+            .getElementById("errorChart")
+            .getContext("2d");
+          errorChart = new Chart(errorCtx, {
+            type: "line",
+            data: {
+              labels: ["10:00", "10:05", "10:10", "10:15", "10:20", "10:25"],
+              datasets: [
+                {
+                  label: "Erreurs (%)",
+                  data: telemetryData.errors,
+                  borderColor: "#f44336",
+                  backgroundColor: "rgba(244,67,54,0.2)",
+                  fill: true,
+                  tension: 0.3,
+                },
+              ],
+            },
+            options: { responsive: true, scales: { y: { beginAtZero: true } } },
+          });
+
+          // Graphique de l'utilisation des ressources avec seuil critique pour CPU à 80%
+          const resourcesCtx = document
+            .getElementById("resourcesChart")
+            .getContext("2d");
+          resourcesChart = new Chart(resourcesCtx, {
+            type: "bar",
+            data: {
+              labels: ["CPU", "Mémoire", "Réseau"],
+              datasets: [
+                {
+                  label: "Utilisation (%)",
+                  data: telemetryData.resources,
+                  backgroundColor: ["#ff9800", "#2196F3", "#9c27b0"],
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                annotation: {
+                  annotations: {
+                    lineCPU: {
+                      type: "line",
+                      yMin: 80,
+                      yMax: 80,
+                      borderColor: "red",
+                      borderWidth: 2,
+                      label: {
+                        content: "Seuil critique CPU (80%)",
+                        enabled: true,
+                        position: "end",
+                      },
+                    },
+                  },
+                },
+              },
+              scales: { y: { beginAtZero: true, max: 100 } },
+            },
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
